@@ -1,4 +1,5 @@
 #import python parkages 
+from functools import cache
 from typing import Tuple
 import streamlit as st
 import googlemaps
@@ -6,6 +7,12 @@ import time
 import pandas as pd
 import geopandas as gpd
 import geopy
+from shapely.geometry import Point, Polygon
+
+from geopy.geocoders import Nominatim
+from geopy.extra.rate_limiter import RateLimiter
+
+
 
 st.title("Schools Data Scrapper")
 
@@ -29,8 +36,8 @@ def miles_to_meters(miles):
 
 
 
-
-def get_map_data(coordinate, Search_str):
+@cache
+def get_map_data(coordinate):
     map_client = googlemaps.Client(API_KEY)
 
     Location = coordinate
@@ -39,7 +46,6 @@ def get_map_data(coordinate, Search_str):
 
     schools_list = []
 
-    search_str = search_str
     response = map_client.places_nearby(
         location=Location,
         radius=10000,
@@ -61,13 +67,30 @@ def get_map_data(coordinate, Search_str):
     df = pd.DataFrame(schools_list)
     df['url'] = 'https://www.google.com/maps/place/?q=place_id:' + df['place_id']
 
-    return df    
+    return st.dataframe(df)   
 
 
-Area = st.sidebar.text_input("Street", "Lekki phase 1")
-city = st.sidebar.text_input("City", "Lekki")
+Area = st.sidebar.text_input("Area", "lekki phase 1")
+City = st.sidebar.text_input("City", "Lekki")
 State = st.sidebar.text_input("Province", "Lagos")
-country = st.sidebar.text_input("Country", "Nigeria")
+Country = st.sidebar.text_input("Country", "Nigeria")
+
+geolocator = Nominatim(user_agent="GTA Lookup")
+geocode = RateLimiter(geolocator.geocode, min_delay_seconds=1)
+location = geolocator.geocode(Area+", "+City+", "+State+", "+Country)
+
+lat = location.latitude
+lon = location.longitude
+
+map_data = pd.DataFrame({'lat': [lat], 'lon': [lon]})
+
+st.map(map_data, zoom=30)
+
+
+coordinate = (lat,lon)
+
+get_map_data(coordinate)
+
 
 
 
