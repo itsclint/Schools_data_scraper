@@ -98,7 +98,7 @@ def get_map_data(coordinate):
         contact_list.append(response.get('result'))
     
     schDF = pd.DataFrame(contact_list)
-    st.dataframe(schDF)
+    AgGrid(schDF)
     
     schDF = convert_df(schDF)
 
